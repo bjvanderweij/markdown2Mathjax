@@ -57,8 +57,8 @@ def sanitizeInput(string,inline_delims=["$","$"],equation_delims=["$$","$$"],pla
     codeblocks=[]
     while 1:
         #find the next point of interest.
-	while startmatches[0] and startmatches[0].start()<post:
-	    startmatches[0]=placeholder_scan.search()
+        while startmatches[0] and startmatches[0].start()<post:
+            startmatches[0]=placeholder_scan.search()
             startpoints[0]= startmatches[0].start() if startmatches[0] else stlen
         while startmatches[1] and startmatches[1].start()<post:
             startmatches[1]=ilscanner[0].search()
@@ -67,29 +67,29 @@ def sanitizeInput(string,inline_delims=["$","$"],equation_delims=["$$","$$"],pla
             startmatches[2]=eqscanner[0].search()
             startpoints[2]= startmatches[2].start() if startmatches[2] else stlen
         #Found start of next block of each type
-	#Placeholder type always takes precedence if it exists and is next...
-	if startmatches[0] and min(startpoints)==startpoints[0]:
-	    #We can do it all in one!
-	    #First add the "stripped" code to the blocks
-	    codeblocks.append('0'+placeholder)
-	    #Work out where the placeholder ends
-	    tmp=startpoints[0]+len(placeholder)
-	    #Add the "sanitized" text up to and including the placeholder
-	    sanitizedString = sanitizedString + string[post*(post>=0):tmp]
-	    #Set the new post
-	    post=tmp
-	    #Back to start!
-	    continue
+        #Placeholder type always takes precedence if it exists and is next...
+        if startmatches[0] and min(startpoints)==startpoints[0]:
+            #We can do it all in one!
+            #First add the "stripped" code to the blocks
+            codeblocks.append('0'+placeholder)
+            #Work out where the placeholder ends
+            tmp=startpoints[0]+len(placeholder)
+            #Add the "sanitized" text up to and including the placeholder
+            sanitizedString = sanitizedString + string[post*(post>=0):tmp]
+            #Set the new post
+            post=tmp
+            #Back to start!
+            continue
         elif startmatches[1] is None and startmatches[2] is None:
-    	    #No more blocks, add in the rest of string and be done with it...
-    	    sanitizedString = sanitizedString + string[post*(post>=0):]
-    	    return (sanitizedString, codeblocks)
+            #No more blocks, add in the rest of string and be done with it...
+            sanitizedString = sanitizedString + string[post*(post>=0):]
+            return (sanitizedString, codeblocks)
         elif startmatches[1] is None:
             inBlock=2
         elif startmatches[2] is None:
             inBlock=1
         else:
-	    inBlock = (startpoints[1] < startpoints[2]) + (startpoints[1] > startpoints[2])*2
+            inBlock = (startpoints[1] < startpoints[2]) + (startpoints[1] > startpoints[2])*2
             if not inBlock:
                 inBlock = break_tie(startmatches[1],startmatches[2])
         #Magic to ensure minimum index is 0
@@ -99,11 +99,11 @@ def sanitizeInput(string,inline_delims=["$","$"],equation_delims=["$$","$$"],pla
         while terminator<post:
             endpoint=scanners[inBlock][1].search()
             #If we run out of terminators before ending this loop, we're done
-    	    if endpoint is None:
-    	        #Add the unterminated codeblock to the sanitized string
-    	        sanitizedString = sanitizedString + string[startpoints[inBlock]:]
-    	        return (sanitizedString, codeblocks)
-    	    terminator=endpoint.start()
+            if endpoint is None:
+                #Add the unterminated codeblock to the sanitized string
+                sanitizedString = sanitizedString + string[startpoints[inBlock]:]
+                return (sanitizedString, codeblocks)
+            terminator=endpoint.start()
         #We fonud a matching endpoint, add the bit to the appropriate codeblock...
         codeblocks.append(str(inBlock)+string[post:endpoint.start()])
         #Now add in the appropriate placeholder
@@ -115,7 +115,7 @@ def reconstructMath(processedString,codeblocks,inline_delims=["$","$"],equation_
     """This is usually the output of sanitizeInput, after having passed the output string through markdown.  The delimiters given to this function should match those used to construct the string to begin with.
 
      This will output a string containing html suitable to use with mathjax.
-     
+
      "<" and ">" "&" symbols in math can confuse the html interpreter because they mark the begining and end of definition blocks.  To avoid issues, if htmlSafe is set to True these symbols will be replaced by ascii codes in the math blocks. The downside to this is that if anyone is already doing this, there already niced text might be mangled (I think I've taken steps to make sure it won't but not extensively tested...)"""
     delims=[['',''],inline_delims,equation_delims]
     placeholder_re = re.compile("(?<!\\\\)"+re.escape(placeholder))
@@ -124,9 +124,9 @@ def reconstructMath(processedString,codeblocks,inline_delims=["$","$"],equation_
     if htmlSafe:
         safeAmp=re.compile("&(?!(?:amp;|lt;|gt;))")
         for i in xrange(len(codeblocks)):
-	    codeblocks[i]=safeAmp.sub("&amp;",codeblock[i])
-	    codeblocks[i]=codeblocks[i].replace("<","&lt;")
-	    codeblocks[i]=codeblocks[i].replace(">","&gt;")
+            codeblocks[i]=safeAmp.sub("&amp;",codeblock[i])
+            codeblocks[i]=codeblocks[i].replace("<","&lt;")
+            codeblocks[i]=codeblocks[i].replace(">","&gt;")
     #Step through the codeblocks one at a time and replace the next occurance of the placeholder.  Extra placeholders are invalid math blocks and ignored...
     outString=''
     scan = placeholder_re.scanner(processedString)
@@ -134,10 +134,10 @@ def reconstructMath(processedString,codeblocks,inline_delims=["$","$"],equation_
     for i in xrange(len(codeblocks)):
         inBlock=int(codeblocks[i][0])
         match=scan.search()
-	if not match:
-	    raise ValueError("More codeblocks given than valid placeholders in text.")
-	outString=outString+processedString[post:match.start()]+delims[inBlock][0]+codeblocks[i][1:]+delims[inBlock][1]
-	post = match.end()
+        if not match:
+            raise ValueError("More codeblocks given than valid placeholders in text.")
+        outString=outString+processedString[post:match.start()]+delims[inBlock][0]+codeblocks[i][1:]+delims[inBlock][1]
+        post = match.end()
     #Add the rest of the string (if we need to)
     if post<len(processedString):
         outString = outString+processedString[post:]
@@ -153,41 +153,41 @@ def findBoundaries(string):
     intwod=False
     for count,char in enumerate(string):
         if char=="$" and last!='\\':
-	    #We just hit a valid $ character!
+            #We just hit a valid $ character!
             if inoned:
-    	        oned.append(count)
-    	        inoned=False
-    	    elif intwod:
-    	        if boundary:
-    	            twod.append(count)
-    	    	    intwod=False
-    		    boundary=False
-    	        else:
-    	            boundary=True
-    	    elif boundary:
-	        #This means the last character was also a valid $
-		twod.append(count)
-		intwod=True
-		boundary=False
-    	    else:
-	        #This means the last character was NOT a useable $
-    	        boundary=True
+                oned.append(count)
+                inoned=False
+            elif intwod:
+                if boundary:
+                    twod.append(count)
+                    intwod=False
+                    boundary=False
+                else:
+                    boundary=True
+            elif boundary:
+                #This means the last character was also a valid $
+                twod.append(count)
+                intwod=True
+                boundary=False
+            else:
+                #This means the last character was NOT a useable $
+                boundary=True
         elif boundary:
-	    #The last character was a valid $, but this one isn't...
-	    #This means the last character was a valid $, but this isn't
-	    if inoned:
-	        print "THIS SHOULD NEVER HAPPEN!"
-	    elif intwod:
-	        #ignore it...
-		pass
-	    else:
-	        oned.append(count-1)
-		inoned=True
-	    boundary=False
+            #The last character was a valid $, but this one isn't...
+            #This means the last character was a valid $, but this isn't
+            if inoned:
+                print("THIS SHOULD NEVER HAPPEN!")
+            elif intwod:
+                #ignore it...
+                pass
+            else:
+                oned.append(count-1)
+                inoned=True
+            boundary=False
         last=char
     #What if we finished on a boundary character?  Actually doesn't matter, but let's include it for completeness
     if boundary:
         if not (inoned or intwod):
-	    oned.append(count)
-	    inoned=True
+            oned.append(count)
+            inoned=True
     return (oned,twod)
